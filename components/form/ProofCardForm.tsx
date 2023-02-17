@@ -58,21 +58,6 @@ const ProofCardForm = ({
       setAnchorEl(null)
     }
 
-    const addProofTypeInput = () => {
-        const input = {
-            ProofType: '', ProofStatus: 4, 
-            Proof: [{  
-                proof: 0,
-                StartDate: null,
-                EndDate: null,
-                Item: {ProofId: generateItemId(),Item: '', Role: ''},
-                total: 0
-            }] as any
-        , total: 0 }
-        
-        setProofTypeInput([...proofTypeInput , input]) 
-    }
-
     const removeProofType = (index: number) => {
         const data = [...proofTypeInput]
         data.splice(index,1)
@@ -209,7 +194,7 @@ const ProofCardForm = ({
                     </Typography>
                 </Stack>
                 {input.Proof?.map((proof: { proof: number, StartDate: Dayjs, EndDate: Dayjs, Item: {Item: string, Role: string}, total: number}, indexProof: number) => (
-                    <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+                    <Stack direction="row" spacing={2} sx={{ mb: 2 }} key={indexProof}>
                         <Box sx={{ minWidth: 220 }}>
                             <FormControl fullWidth>
                                 <InputLabel id="demo-simple-select-label">Member</InputLabel>
