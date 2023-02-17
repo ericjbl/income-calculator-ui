@@ -44,7 +44,7 @@ const Report = () => {
             title={report?.name}
             subheader={<div>
                 <p style={{ margin: 0 }}>Report Date: {new Date(report?.ReportDate).toLocaleDateString("en-US")}</p>
-                <p style={{ margin: 0 }}>Eligibility Date Range: {new Date(report?.EligibilityStartDate).toLocaleDateString("en-US")} - {new Date(report?.EligibilityEndDate).toLocaleDateString("en-US")}</p>
+                <p style={{ margin: 0 }}>Report Period: {new Date(report?.EligibilityStartDate).toLocaleDateString("en-US")} - {new Date(report?.EligibilityEndDate).toLocaleDateString("en-US")}</p>
                 <p style={{ margin: 0 }}>Type: {report?.Type?.CalculationType}</p>
                 </div>}
           />

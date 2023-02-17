@@ -7,6 +7,7 @@ type Item = {
     id: number
     Item: string
     Role: ItemRole
+    ProofId: number
 }
 
 type ProofStatus = {
