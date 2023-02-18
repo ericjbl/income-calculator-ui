@@ -5,9 +5,11 @@ type ItemRole = {
 
 type Item = { 
     id: number
+    roleId: number
     Item: string
     Role: ItemRole
-    ProofId: number
+    ProofId: string
+    ReportId: number
 }
 
 type ProofStatus = {
@@ -26,15 +28,20 @@ type Proof =  {
     Type: ProofType
     ItemProof: ItemProof[]
     total: number
+    StatusId: number
+    TypeId: number
+    ReportId: number
 }
 
 type ItemProof = {
-    id: number
+    id?: number
     proof: number
     StartDate: string
     EndDate: string
     Item: Item
     total: number
+    ProofId: number
+    ItemId: number
 }
 
 type CalculationType = {
@@ -42,12 +49,21 @@ type CalculationType = {
     CalculationType: string
 }
 
+type ReportStatus = {
+    id: number
+    ReportStatus: string
+}
+
 type Report = {
+    id: number
     name: string
     ReportDate: string
     EligibilityStartDate: string
     EligibilityEndDate: string
+    TypeId: number
     Type: CalculationType
+    reportStatusId: number
+    Status: ReportStatus
     Proof: Proof[]
     Item: Item[]
     total: number
@@ -64,4 +80,5 @@ export type {
     Report,
     CalculationType,
     ItemProof,
+    ReportStatus,
 }

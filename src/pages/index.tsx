@@ -2,144 +2,244 @@ import Head from 'next/head'
 import Image from 'next/image'
 import { Inter } from '@next/font/google'
 import styles from '@/styles/Home.module.css'
-import { List,ListItemText } from '@mui/material'
 import { useEffect, useState, useCallback } from 'react'
-import { getCalculationTypes } from 'service/IncomeServices'
+import { useRouter } from 'next/router'
+import { getReports } from 'service/IncomeServices'
 import SideMenu from 'components/SideMenu'
+import { 
+  Paper, 
+  TableContainer, 
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Chip,
+  Box,
+  TableFooter,
+  TablePagination,
+} from '@mui/material'
+import { DataGrid, GridColDef, GridValueFormatterParams, GridRenderCellParams, GridSelectionModel} from '@mui/x-data-grid'
+import { Report, ReportStatus } from 'utils/types'
+import WarningIcon from '@mui/icons-material/Warning'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import IncomeAppBar from 'components/IncomeAppBar'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export default function Home() {
-  const [calculationTypes,setCalculationTypes] = useState([] as any)
+  const [reports,setReports] = useState([] as any)
+  // const [selectedRow, setSelectedRow] = useState({} as Report)
+  // const [page, setPage] = useState(0)
+  // const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [pageSize, setPageSize] = useState(10);
+  const [selectionModel, setSelectionModel] = useState<GridSelectionModel>([])
+  const router = useRouter()
+
+  const columns: GridColDef[] = [
+    { field: 'name', headerName: 'Name', flex: 1,},
+    { field: 'ReportDate', headerName: 'Report Date', flex: 1,
+    valueFormatter: (params: GridValueFormatterParams<Date>) => {
+      if (params.value == null) {
+        return '';
+      }
+
+      const valueFormatted = new Date(params.value).toLocaleDateString("en-US");
+      return `${valueFormatted}`;
+    },
+    },
+    { field: 'EligibilityStartDate', headerName: 'Eligible Start Date', flex: 1,
+    valueFormatter: (params: GridValueFormatterParams<Date>) => {
+      if (params.value == null) {
+        return '';
+      }
+
+      const valueFormatted = new Date(params.value).toLocaleDateString("en-US");
+      return `${valueFormatted}`;
+    },
+    },
+    { field: 'EligibilityEndDate', headerName: 'Eligible End Date', flex: 1,
+    valueFormatter: (params: GridValueFormatterParams<Date>) => {
+      if (params.value == null) {
+        return '';
+      }
+
+      const valueFormatted = new Date(params.value).toLocaleDateString("en-US");
+      return `${valueFormatted}`;
+    },
+    },
+    { field: 'total', headerName: 'Total', flex: 1,
+    valueFormatter: (params: GridValueFormatterParams<number>) => {
+      if (params.value == null) {
+        return '';
+      }
+
+      const valueFormatted = Number(params.value).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+      return `${valueFormatted}`;
+    },
+    },
+    { field: 'percentage', headerName: 'Percentage', flex: 1,
+    valueFormatter: (params: GridValueFormatterParams<number>) => {
+      if (params.value == null) {
+        return '';
+      }
+
+      const valueFormatted = Number(params.value * 100).toFixed(2);
+      return `${valueFormatted} %`;
+    },
+    },
+    { field: 'result', headerName: 'Result', flex: 1,
+    renderCell: (params: GridRenderCellParams<String>) => (
+      <Chip label={params.value} color={params.value === 'Ineligible' ? "error" : "success"} icon={params.value === 'Ineligible' ? <WarningIcon /> : <CheckCircleIcon/>} />
+    )                
+    },
+    { field: 'Status', headerName: 'Status', flex: 1,
+    valueFormatter: (params: GridValueFormatterParams<ReportStatus>) => {
+      if (params.value?.ReportStatus == null) {
+        return '';
+      }
+
+      const valueFormatted = params.value?.ReportStatus;
+      return `${valueFormatted}`;
+    },
+
+    renderCell: (params: GridRenderCellParams<ReportStatus>) => (
+      <Chip label={params.value?.ReportStatus} color={params.value?.ReportStatus === 'Incomplete' ? "error" : "success"} icon={params.value?.ReportStatus === 'Incomplete' ? <WarningIcon /> : <CheckCircleIcon/>} />
+    ) 
+    },
+  ];
 
   useEffect(()=>{
-    getCalculationTypesResp()
+    getReportsResp()
   },[])
 
-  const getCalculationTypesResp = useCallback(async () => {
-    const resp = await getCalculationTypes()
-    setCalculationTypes(resp)
+  const getReportsResp = useCallback(async () => {
+    const resp = await getReports()
+    setReports(resp)
   },[])
+
+  // const handleChangePage = (event: unknown, newPage: number) => {
+  //   setPage(newPage);
+  // };
+
+  // const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+  //   setRowsPerPage(parseInt(event.target.value, 10));
+  //   setPage(0);
+  // };
 
   return (
     <>
       <Head>
-        <title>Create Next App</title>
+        <title>Income Calculation App</title>
         <meta name="description" content="Generated by create next app" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={styles.main}>
-        {calculationTypes && 
-        <List>
-          {calculationTypes.map((type: {id: number, CalculationType: string}) =>
-            <ListItemText key={type.id}>{type.CalculationType}</ListItemText>
-          )}
-        </List>}
-        <SideMenu />
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>pages/index.tsx</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
+      <IncomeAppBar />
+      {/* <main className={styles.main}> */}
+       
+        {reports && 
+        <Box sx={{ height: 600, width: 1600, m: 3 }}>
+          <DataGrid
+          rows={reports}
+          columns={columns}
+          pageSize={pageSize}
+          pagination
+          onPageSizeChange={(newPageSize) => setPageSize(newPageSize)}
+          rowsPerPageOptions={[10,20,30]}
+          onSelectionModelChange={(newSelectionModel) => {
+            setSelectionModel(newSelectionModel);
+            router.push('/reports/'+newSelectionModel[0])
+            console.log(newSelectionModel)
+          }}
+        />
+        </Box>
+        }
+{/*     
+      <TableContainer component={Paper}>
+        <Table sx={{ minWidth: 500 }} aria-label="custom pagination table">
+          <TableHead>
+              <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Report Date</TableCell>
+                  <TableCell>Eligible Start Date</TableCell>
+                  <TableCell>Eligible End Date</TableCell>
+                  <TableCell>Total</TableCell>
+                  <TableCell>Percentage</TableCell>
+                  <TableCell>Result</TableCell>
+                  <TableCell>Status</TableCell>
+              </TableRow>
+          </TableHead>
+          <TableBody>
+            {
+            (rowsPerPage > 0
+              ? reports?.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              : reports
+            )
+            // reports?
+            .map((row : Report) => {
+              const isItemSelected =  selectedRow.id === row.id;
+              return(
+                <TableRow 
+                  hover
+                  onClick={() => setSelectedRow(row)}
+                  tabIndex={-1}
+                  key={row.id}
+                  selected={isItemSelected}
+                >
+                  <TableCell component="th" scope="row">
+                    {row.name}
+                  </TableCell>
+                  <TableCell style={{ width: 160 }} >
+                    {new Date(row.ReportDate).toLocaleDateString("en-US")}
+                  </TableCell>
+                  <TableCell style={{ width: 160 }} >
+                    {new Date(row.EligibilityStartDate).toLocaleDateString("en-US")}
+                  </TableCell>
+                  <TableCell style={{ width: 160 }} >
+                    {new Date(row.EligibilityEndDate).toLocaleDateString("en-US")}
+                  </TableCell>
+                  <TableCell style={{ width: 160 }} >
+                    {row.total?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                  </TableCell>
+                  <TableCell style={{ width: 160 }} >
+                    {row.percentage?.toFixed(2)}%
+                  </TableCell>
+                  <TableCell style={{ width: 160 }} >
+                    <Chip label={row.result} color={row.result === 'Ineligible' ? "error" : "success"} icon={row.result === 'Ineligible' ? <WarningIcon /> : <CheckCircleIcon/>} />
+                  </TableCell>
+                  <TableCell style={{ width: 160 }} >
+                    <Chip label={row.Status?.ReportStatus} color={row.Status?.ReportStatus === 'Incomplete' ? "error" : "success"} icon={row.Status?.ReportStatus === 'Incomplete' ? <WarningIcon /> : <CheckCircleIcon />} />
+                  </TableCell>
+                </TableRow>
+              )
+              
+            })}
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
+                colSpan={3}
+                count={reports?.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                SelectProps={{
+                  inputProps: {
+                    'aria-label': 'rows per page',
+                  },
+                  native: true,
+                }}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                // ActionsComponent={TablePaginationActions}
               />
-            </a>
-          </div>
-        </div>
-
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
-            />
-          </div>
-        </div>
-
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </TableContainer> */}
+       
+      {/* </main> */}
     </>
   )
 }

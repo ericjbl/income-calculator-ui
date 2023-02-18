@@ -21,7 +21,8 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import dayjs,{ Dayjs } from 'dayjs'
-import { ProofStatus, ProofType } from "utils/types"
+import { ProofStatus } from "utils/types"
+import DeleteIcon from '@mui/icons-material/Delete'
 import { useState } from "react"
 import { calculateTotal, getChipColor, getDaysToInclude, generateItemId } from "utils/dataUtil"
 
@@ -61,6 +62,12 @@ const ProofCardForm = ({
     const removeProofType = (index: number) => {
         const data = [...proofTypeInput]
         data.splice(index,1)
+     
+        const finalTotal = data?.reduce((accumulator: number, object: {total: string}) => {
+            return accumulator + parseFloat(object.total)
+        },0)
+        
+        setReportTotal(finalTotal)
         setProofTypeInput(data) 
     }
 
@@ -70,11 +77,28 @@ const ProofCardForm = ({
             proof: 0,
             StartDate: null,
             EndDate: null,
-            Item: {Item: '', Role: ''},
+            Item: {ProofId: '', Item: '', Role: ''},
             total: 0
         })
   
         setProofTypeInput([...proofTypeInput]) 
+    }
+
+    const removeProof = (index: number, indexProof: number) => {
+        let data = [...proofTypeInput]        
+        data[index].Proof.splice(indexProof,1)
+        const proofTotal = data[index].Proof?.reduce((accumulator: number, object: {total: string}) => {
+            return accumulator + parseFloat(object.total)
+        },0)
+    
+        data[index].total = proofTotal
+
+        const finalTotal = data.length > 1 ? data?.reduce((accumulator: number, object: {total: string}) => {
+            return accumulator + parseFloat(object.total)
+        },0) : proofTotal
+
+        setReportTotal(finalTotal)
+        setProofTypeInput(data) 
     }
 
     const handleProofStatushange = (index: number, event: SelectChangeEvent) => {
@@ -84,13 +108,9 @@ const ProofCardForm = ({
         setProofTypeInput(data) 
     }
 
-    const ProofTypeDisabled = (option: number) => {
-        return proofTypeInput.some((input: { ProofType: number }) => input.ProofType === option)
-    }
-
     const handleItemProofChange = (index: number, indexProof: number, event: SelectChangeEvent) => {
         let data = [...proofTypeInput]
-        data[index].Proof[indexProof].Item.Item = event.target.value as string
+        data[index].Proof[indexProof].Item.ProofId = event.target.value as string
         setProofTypeInput(data) 
     }
 
@@ -126,8 +146,6 @@ const ProofCardForm = ({
             return accumulator + parseFloat(object.total)
         },0) : proofTotal
 
-        console.log('Proof len: ', data.length)
-        console.log(finalTotal)
         setReportTotal(finalTotal)
         setProofTypeInput(data) 
     }
@@ -193,7 +211,7 @@ const ProofCardForm = ({
                         {input.total?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
                     </Typography>
                 </Stack>
-                {input.Proof?.map((proof: { proof: number, StartDate: Dayjs, EndDate: Dayjs, Item: {Item: string, Role: string}, total: number}, indexProof: number) => (
+                {input.Proof?.map((proof: { proof: number, StartDate: Dayjs, EndDate: Dayjs, Item: {ProofId: string, Item: string, Role: string}, total: number}, indexProof: number) => (
                     <Stack direction="row" spacing={2} sx={{ mb: 2 }} key={indexProof}>
                         <Box sx={{ minWidth: 220 }}>
                             <FormControl fullWidth>
@@ -201,12 +219,12 @@ const ProofCardForm = ({
                                 <Select
                                 labelId="demo-simple-select-label"
                                 id="demo-simple-select"
-                                value={proof.Item.Item}
+                                value={proof.Item.ProofId}
                                 label="Role"
                                 onChange={(event) => handleItemProofChange(index, indexProof, event)}
                                 >
-                                    {membersInput.map((member: {Item: '', Role: ''}, index: number) => (
-                                        <MenuItem key={index} value={member.Item}>{member.Item}</MenuItem>
+                                    {membersInput.map((member: {ProofId: '', Item: '', Role: ''}, index: number) => (
+                                        <MenuItem key={index} value={member.ProofId}>{member.Item}</MenuItem>
                                     ))}
                                 </Select>
                             </FormControl>
@@ -214,7 +232,6 @@ const ProofCardForm = ({
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
                             <DatePicker
                                 label="Start Date"
-                                
                                 value={proof.StartDate}
                                 onChange={(newValue) => handleItemProofStartDateChange(index, indexProof, newValue)}
                                 renderInput={(params) => <TextField {...params} />}
@@ -223,7 +240,6 @@ const ProofCardForm = ({
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
                             <DatePicker
                                 label="End Date"
-                                
                                 value={proof.EndDate}
                                 onChange={(newValue) => handleItemProofEndDateChange(index, indexProof, newValue)}
                                 renderInput={(params) => <TextField {...params} />}
@@ -240,6 +256,9 @@ const ProofCardForm = ({
                         <Typography sx={{ pt: 2 }}>
                             {proof.total.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
                         </Typography>
+                        <IconButton disabled={input.Proof.length === 1} onClick={() => removeProof(index, indexProof)}>
+                            <DeleteIcon fontSize="medium" />
+                        </IconButton>
                     </Stack>
                 ))}
         

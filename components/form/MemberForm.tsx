@@ -11,6 +11,7 @@ import {
 } from "@mui/material"
 import { ItemRole } from "utils/types"
 import DeleteIcon from '@mui/icons-material/Delete'
+import { generateItemId } from "utils/dataUtil"
 
 const MemberForm = ({
     input,
@@ -34,6 +35,7 @@ const MemberForm = ({
     const handleItemChange = (index: number, event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
         console.log(index, event.target.value)
         let data = [...membersInput]
+        data[index].ProofId = generateItemId()
         data[index].Item = event.target.value
         setMembersInput(data) 
     }
@@ -69,8 +71,8 @@ const MemberForm = ({
                     </Select>
                 </FormControl>
             </Box>
-            <IconButton disabled={membersInput.length === 1}>
-                <DeleteIcon fontSize="medium" onClick={() => removeMember(index)}/>
+            <IconButton disabled={membersInput.length === 1} onClick={() => removeMember(index)}>
+                <DeleteIcon fontSize="medium" />
             </IconButton>
         </Stack>
 

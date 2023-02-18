@@ -6,8 +6,7 @@ import {
     CardHeader, 
     CardContent, 
     Avatar, 
-    List, 
-    ListItem, 
+    Typography, 
     Paper, 
     TableContainer, 
     Table,
@@ -16,10 +15,15 @@ import {
     TableRow,
     TableCell,
     Chip,
+    IconButton,
 } from '@mui/material'
 import { green, red } from '@mui/material/colors'
 import { Item, Proof, Report, ItemProof } from 'utils/types'
-import { groupBy } from 'utils/dataUtil'
+import { getChipColor } from 'utils/dataUtil'
+import WarningIcon from '@mui/icons-material/Warning'
+import MoreVertIcon from '@mui/icons-material/MoreVert'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import IncomeAppBar from 'components/IncomeAppBar'
 
 const Report = () => {
   const router = useRouter()
@@ -38,6 +42,7 @@ const Report = () => {
 
   return (
     <>
+        <IncomeAppBar />
         <Card>
           <CardHeader
             avatar={<Avatar sx={{ bgcolor: report?.result === 'Eligible' ? green[500] : red[500] }}>{report?.result?.split(' ')[0][0]}</Avatar>}
@@ -47,9 +52,17 @@ const Report = () => {
                 <p style={{ margin: 0 }}>Report Period: {new Date(report?.EligibilityStartDate).toLocaleDateString("en-US")} - {new Date(report?.EligibilityEndDate).toLocaleDateString("en-US")}</p>
                 <p style={{ margin: 0 }}>Type: {report?.Type?.CalculationType}</p>
                 </div>}
+            action={<div>
+                {report?.Status?.ReportStatus === 'Incomplete' ? <WarningIcon fontSize="large" color="error"/> : <CheckCircleIcon fontSize="large" color="success"/>}
+                <IconButton aria-label="settings">
+                    <MoreVertIcon />
+                </IconButton>
+            </div>}
           />
           <CardContent>
-            <TableContainer component={Paper}>
+            <Typography>Total: {report?.total?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} Percentage: {report?.percentage?.toFixed(2)}%</Typography>
+            <Typography variant="h5" sx={{ mt: 2, mb: 1 }}>Members</Typography>
+            <TableContainer component={Paper} sx={{ mb: 2 }}>
                 <Table sx={{ minWidth: 450 }} size="small" aria-label="a dense table">
                     <TableHead>
                         <TableRow>
@@ -67,11 +80,16 @@ const Report = () => {
                         </TableBody>
                 </Table>
             </TableContainer>
+            <Typography variant="h5" sx={{ mt: 2, mb: 1}}>Proof</Typography>
             {report?.Proof?.map((proof: Proof) => (
                 <Card key={proof.id} >
                     <CardHeader
                         title={proof.Type.ProofType}
-                        subheader={<Chip label={proof.Status.status} color="primary" />}
+                        subheader={
+                        <Chip 
+                            label={proof.Status.status} 
+                            sx={{bgcolor: getChipColor(proof.Status.status), color: 'white'}}
+                        />}
                     />
                     <CardContent>
                         <TableContainer component={Paper}>
@@ -93,8 +111,8 @@ const Report = () => {
                                                 <TableCell align="left">{itemProof.Item.Role.ItemRole}</TableCell>
                                                 <TableCell>{new Date(itemProof.StartDate).toLocaleDateString("en-US")}</TableCell>
                                                 <TableCell>{new Date(itemProof.EndDate).toLocaleDateString("en-US")}</TableCell>
-                                                <TableCell align="left">${itemProof.proof}</TableCell>
-                                                <TableCell align="left">${itemProof.total}</TableCell>
+                                                <TableCell align="left">{itemProof.proof?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</TableCell>
+                                                <TableCell align="left">{itemProof.total?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</TableCell>
                                             </TableRow>
                                     ))}
                               </TableBody>
@@ -103,8 +121,6 @@ const Report = () => {
                     </CardContent>
                 </Card>
             ))}
-            Total: ${report?.total}
-            Percentage: ${report?.percentage}
           </CardContent>
         </Card>
     </>
