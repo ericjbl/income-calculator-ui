@@ -17,7 +17,9 @@ import {
     AccordionDetails,
     IconButton,
     Button,
-    ButtonGroup
+    Snackbar,
+    Alert,
+    AlertTitle
 } from "@mui/material"
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline'
@@ -41,11 +43,15 @@ import {
  } from "service/IncomeServices"
 import ProofCardForm from "components/form/ProofCardForm"
 import MemberForm from "components/form/MemberForm"
-import { generateItemId } from "utils/dataUtil";
+import { generateItemId } from "utils/dataUtil"
+import { useRouter } from "next/router"
 import { green, red } from "@mui/material/colors"
 import IncomeAppBar from "components/IncomeAppBar"
 
 const AddReport = () => {
+    const router = useRouter()
+    const [alert, setAlert]= useState(false)
+    const [alertMessage, setAlertMessage] = useState({} as any)
     const [reportDate, setReportDate] = useState<Dayjs>(dayjs())
     const [eligibilityStartDate, setEligibilityStartDate] = useState<Dayjs>(dayjs().startOf('month').subtract(1,'year'))
     const [eligibilityEndDate, setEligibilityEndDate] = useState<Dayjs>(dayjs().startOf('month').subtract(1,'day'))
@@ -240,7 +246,8 @@ const AddReport = () => {
                 }
             })
             
-
+            setAlert(true)
+            setAlertMessage({message: 'Application was succesful', status: 'success'})
         }
         console.log('save...',addResult)
     }
@@ -248,6 +255,18 @@ const AddReport = () => {
     return (
         <>
         <IncomeAppBar />
+        {alert &&   
+            <Snackbar
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                open={alert}
+                autoHideDuration={4000}
+                onClose={() => router.push('/')}
+            >
+                <Alert onClose={() => router.push('/')} severity={alertMessage.status} sx={{ width: '100%' }}>
+                    {alertMessage.message}
+                </Alert>
+            </Snackbar>
+        }
         <Card>
             <CardHeader 
                 avatar={<Avatar sx={{ bgcolor: reportResult === 'Eligible' ? green[500] : red[500] }}>{reportResult.split(' ')[0][0]}</Avatar>}
