@@ -226,7 +226,7 @@ const AdminPortal = () => {
                     onChange={handleUserRoleChange}
                 >
                     {userRoles.map((userRole: UserRole) => (
-                        <MenuItem value={userRole.roleId}>{userRole.role}</MenuItem>
+                        <MenuItem key={userRole.roleId} value={userRole.roleId}>{userRole.role}</MenuItem>
                     ))}
                     
                 </Select>
