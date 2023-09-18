@@ -51,7 +51,7 @@ const Login = () => {
                     alignItems: 'center',
                 }}
             >
-                <Image src="/../public/Eligibee-bee.png"  alt="eligibee" height={300} width={300}/>
+                <Image src="/Eligibee-bee.png"  alt="eligibee" height={300} width={300}/>
 
                 {/* <Avatar alt="eligibee" src="/../../public/eligibee.jpg" /> */}
                     {/* <LockOutlinedIcon /> */}

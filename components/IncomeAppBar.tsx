@@ -36,7 +36,7 @@ const IncomeAppBar = () => {
           >
             <MenuIcon />
           </IconButton> */}
-          <Image src="/../public/logo.png" height={80} width={130} alt="eligibee-logo"/>
+          <Image src="/logo.png" height={80} width={130} alt="eligibee-logo"/>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} onClick={() => router.push('/')}>
             Eligibee
           </Typography>

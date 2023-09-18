@@ -448,7 +448,7 @@ const AddReport = () => {
             </CardContent>
         </Card>
         </Grid>
-        <Image  src="/../public/Eligibee-bee.png"  alt="eligibee" height={300} width={300} style={{ right: 0, position: 'fixed', bottom: 0, }} />
+        <Image  src="/Eligibee-bee.png"  alt="eligibee" height={300} width={300} style={{ right: 0, position: 'fixed', bottom: 0, }} />
         </>
     )
 }
