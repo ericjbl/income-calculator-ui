@@ -8,24 +8,24 @@ export const generateItemId = () => {
 export const getChipColor = (status: string) => {
     let color: string
     switch (status) {
-        // case 'N/A': {
-        //     color = (daysToInclude * base)/365
-        //     break
-        // }
+        case 'N/A': {
+            color = '#979797'
+            break
+        }
         // case 'Not Started': {
         //     color = 'info'
         //     break
         // }
         case 'Completed': {
-            color = '#2e7d32'
+            color = '#27ab4d'
             break
         }
         case 'Pending Data': {
-            color = '#d32f2f'
+            color = '#b32123'
             break
         }
         default: {
-            color = '#0288d1'
+            color = '#128cc1'
         }   
     }
     return color

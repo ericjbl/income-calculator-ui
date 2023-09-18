@@ -8,18 +8,23 @@ import {
     MenuItem,
     SelectChangeEvent,
     IconButton,
+    Chip,
 } from "@mui/material"
 import { ItemRole } from "utils/types"
 import DeleteIcon from '@mui/icons-material/Delete'
 import { generateItemId } from "utils/dataUtil"
+import { HiOutlineXCircle } from "react-icons/hi2";
+import CloseIcon from '@mui/icons-material/Close';
 
 const MemberForm = ({
+    edit = false,
     input,
     index,
     setMembersInput,
     membersInput,
     itemRolesOptions
 }: {
+    edit?: boolean,
     input: any,
     index: number,
     membersInput: any,
@@ -28,7 +33,19 @@ const MemberForm = ({
 }) => {
     const removeMember = (index: number) => {
         const data = [...membersInput]
-        data.splice(index,1)
+        if(edit && data[index].id !== 0) {
+            data[index].delete = true
+            setMembersInput(data) 
+        }
+        else {
+            data.splice(index,1)
+            setMembersInput(data) 
+        }
+    }
+
+    const cancelRemoveMember = (index: number) => {
+        const data = [...membersInput]
+        data[index].delete = false
         setMembersInput(data) 
     }
 
@@ -40,6 +57,13 @@ const MemberForm = ({
         setMembersInput(data) 
     }
 
+    const handleItemUIDChange = (index: number, event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+        console.log(index, event.target.value)
+        let data = [...membersInput]
+        data[index].ItemUID = event.target.value
+        setMembersInput(data) 
+    }
+
     const handleItemRoleChange = (index: number, event: SelectChangeEvent) => {
         console.log(index, event.target.name)
         let data = [...membersInput]
@@ -48,12 +72,19 @@ const MemberForm = ({
     }
 
     return (
-        <Stack direction="row" spacing={2} key={index} sx={{ mb: 2 }}>
+        <Stack  direction="row" spacing={2} sx={{ mb: 2 }}>
+            <>
             <TextField
                 id="outlined-name"
                 label="Item name"
                 value={input.Item}
                 onChange={(event) => handleItemChange(index, event)}
+            />
+            <TextField
+                id="outlined-name"
+                label="Item uid"
+                value={input.ItemUID}
+                onChange={(event) => handleItemUIDChange(index, event)}
             />
             <Box sx={{ minWidth: 220 }}>
                 <FormControl fullWidth>
@@ -71,11 +102,16 @@ const MemberForm = ({
                     </Select>
                 </FormControl>
             </Box>
-            <IconButton disabled={membersInput.length === 1} onClick={() => removeMember(index)}>
+            {input.delete ? 
+            <Chip sx={{ backgroundColor: "#b32123", color: "#f6e6e9" }} label="REMOVED" icon={<HiOutlineXCircle color={"#f6e6e9"} fontSize={"32px"} onClick={() => cancelRemoveMember(index)}/>}></Chip> :
+            <IconButton disabled={edit ? !edit : membersInput.length === 1} onClick={() => removeMember(index)}>
                 <DeleteIcon fontSize="medium" />
-            </IconButton>
+            </IconButton>}
+            {/* <IconButton disabled={edit ? !edit : membersInput.length === 1} onClick={() => removeMember(index)}>
+                <DeleteIcon fontSize="medium" />
+            </IconButton> */}
+            </>
         </Stack>
-
     )
 }
 

@@ -19,8 +19,7 @@ import {
     Button,
     Snackbar,
     Alert,
-    Container,
-    Grid,
+    ButtonGroup,
     AlertTitle
 } from "@mui/material"
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
@@ -43,6 +42,13 @@ import {
     addReportProof,
     addReportItemProof,
     getToken,
+    updateReport,
+    updateMember,
+    updateReportItemProof,
+    updateReportProof,
+    deleteProof,
+    deleteItemProof,
+    deleteMember,
  } from "service/IncomeServices"
 import ProofCardForm from "components/form/ProofCardForm"
 import MemberForm from "components/form/MemberForm"
@@ -51,39 +57,54 @@ import { useRouter } from "next/router"
 import { green, red } from "@mui/material/colors"
 import IncomeAppBar from "components/IncomeAppBar"
 import { useAuth } from "providers/AuthProvider"
-import Image from "next/image"
 
-const AddReport = () => {
+const UpdateReport = ({ data, setEdit } : {data: Report, setEdit: () => void}) => {
     const router = useRouter()
     const { user } = useAuth()
     const [alert, setAlert]= useState(false)
     const [alertMessage, setAlertMessage] = useState({} as any)
-    const [reportDate, setReportDate] = useState<Dayjs>(dayjs())
-    const [eligibilityStartDate, setEligibilityStartDate] = useState<Dayjs>(dayjs().startOf('month').subtract(1,'year'))
-    const [eligibilityEndDate, setEligibilityEndDate] = useState<Dayjs>(dayjs().startOf('month').subtract(1,'day'))
-    const [name, setName] = useState("")
-    const [lastName, setLastName] = useState("")
-    const [type, setType] = useState("")
-    const [reportStatus, setReportStatus] = useState("")
-    const [reportTotal, setReportTotal] = useState(0)
-    const [reportResult, setReportResult] = useState("Uneligible")
-    const [reportPercentage, setReportPercentage] =useState(0)
+    const [reportDate, setReportDate] = useState<Dayjs>(dayjs(data.ReportDate))
+    const [eligibilityStartDate, setEligibilityStartDate] = useState<Dayjs>(dayjs(data.EligibilityStartDate))
+    const [eligibilityEndDate, setEligibilityEndDate] = useState<Dayjs>(dayjs(data.EligibilityEndDate))
+    const [name, setName] = useState(data.name)
+    const [lastName, setLastName] = useState(data.lastName)
+    const [type, setType] = useState(data.Type.id.toString())
+    const [reportStatus, setReportStatus] = useState(data.Status.id.toString())
+    const [reportTotal, setReportTotal] = useState(data.total)
+    const [reportResult, setReportResult] = useState(data.result)
+    const [reportPercentage, setReportPercentage] =useState(data.percentage)
     const [typeOptions, setTypeOpitons] = useState([] as any)
     const [itemRolesOptions, setItemRolesOpitons] = useState([] as any)
     const [proofTypesOptions, setProofTypesOptions] = useState([] as any)
     const [proofStatusOptions, setProofStatusOptions] = useState([] as any)
     const [reportStatusOptions, setReportStatusOptions] = useState([] as any)
-    const [membersInput, setMembersInput] = useState([{ProofId: generateItemId(), Item: '', Role: '', ItemUID: ''}] as any)
-    const [proofTypeInput, setProofTypeInput] = useState([{
-        ProofType: '', ProofStatus: 1, 
-        Proof: [{  
-            proof: 0,
-            StartDate: null,
-            EndDate: null,
-            Item: {ProofId: '', Item: '', Role: ''},
-            total: 0
-        }] as any
-    , total: 0 }] as any)
+    const [membersInput, setMembersInput] = useState(
+        data.Item.map((item: Item) => ({
+            id: item.id, ProofId: item.ProofId, Item: item.Item, Role: item.Role.id.toString(), ItemUID: item.ItemUID, delete: item.delete
+        }
+        ))
+    )
+    const [proofTypeInput, setProofTypeInput] = useState(
+        data.Proof.map((proof: Proof) =>  ( 
+            {
+                id: proof.id,
+                ProofType: proof.Type.id.toString(), 
+                ProofStatus: proof.Status.id, 
+                Proof: proof.ItemProof.map((itemProof: ItemProof) => (
+                {   
+                    id: itemProof.id,
+                    proof: itemProof.proof,
+                    StartDate: dayjs(itemProof.StartDate),
+                    EndDate: dayjs(itemProof.EndDate),
+                    Item: { ProofId: itemProof.Item.ProofId, Item: itemProof.Item.Item, Role: itemProof.Item.Role.ItemRole, ItemUID: '', },
+                    total: itemProof.total,
+                    delete: itemProof.delete
+                }))
+                , total: proof.total,
+                Delete: proof.Delete
+            }
+        ))
+   )
 
     useEffect(() => {
         const getTypeOptions = async () => {
@@ -111,7 +132,6 @@ const AddReport = () => {
             const reportStatus = await getReportStatus()
             setReportStatusOptions(reportStatus)
         }
-        setReportStatus("2")
         getReportStatusOptions()
         getTypeOptions()
         getProofStatusOptions()
@@ -135,6 +155,7 @@ const AddReport = () => {
     }
 
     const handleLastNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        console.log(event.target.value)
         setLastName(event.target.value)
     }
 
@@ -151,7 +172,7 @@ const AddReport = () => {
     }
 
     const handleTypeChange = (event: SelectChangeEvent) => {
-        setType(event.target.value as string)
+        setType(event.target.value)
     }
 
     const handleStatusChange = (event: SelectChangeEvent) => {
@@ -160,25 +181,30 @@ const AddReport = () => {
     
     const addMembersInput = ()=>{
         const input = {
+            id: 0,
             ProofId: generateItemId(),
             Item: '', 
             Role: '',
             ItemUID: '',
+            delete: false,
         } 
         setMembersInput([...membersInput, input]) 
     }
 
     const addProofTypeInput = () => {
         const input = {
+            id: 0,
             ProofType: '', ProofStatus: 1, 
-            Proof: [{  
+            Proof: [{ 
+                id: 0 , 
                 proof: 0,
                 StartDate: null,
                 EndDate: null,
-                Item: {ProofId: '', Item: '', Role: ''},
+                Item: {ProofId: '', Item: '', Role: '', ItemUID: '',},
                 total: 0
             }] as any
-        , total: 0 }
+        , total: 0, Delete: false
+     }
         
         setProofTypeInput([...proofTypeInput , input]) 
     }
@@ -190,62 +216,75 @@ const AddReport = () => {
         setProofTypeInput(data) 
     }
 
-    const ProofTypeDisabled = (option: number) => {
-        return proofTypeInput.some((input: { ProofType: number }) => input.ProofType === option)
+    const ProofTypeDisabled = (option: string) => {
+        console.log(option)
+        console.log(proofTypeInput)
+        return proofTypeInput.some((input: { ProofType: string }) => input.ProofType === option)
     }
 
     const submit = async () => {
-        const data: Report = {} as Report
-        data.name = name
-        data.lastName = lastName
-        data.ReportDate = reportDate.format('MM/DD/YYYY')
-        data.EligibilityStartDate = eligibilityStartDate.format('MM/DD/YYYY')
-        data.EligibilityEndDate = eligibilityEndDate.format('MM/DD/YYYY')
-        data.TypeId = parseInt(type)
-        data.reportStatusId = parseInt(reportStatus)
-        data.total = reportTotal
-        data.result = reportResult
-        data.percentage = reportPercentage
-        data.userId = user.username
-        data.updateby = user.username
+        const report: Report = {} as Report
+        report.name = name
+        report.lastName = lastName
+        report.ReportDate = reportDate.format('MM/DD/YYYY')
+        report.EligibilityStartDate = eligibilityStartDate.format('MM/DD/YYYY')
+        report.EligibilityEndDate = eligibilityEndDate.format('MM/DD/YYYY')
+        report.TypeId = parseInt(type)
+        report.reportStatusId = parseInt(reportStatus)
+        report.total = reportTotal
+        report.result = reportResult
+        report.percentage = reportPercentage
+        report.userId = data.User.username
+        report.updateby = user.username
 
-        const addResult = await addReport(data)
-        if(addResult.id) {
-            membersInput.forEach(async (member: {
-                ProofId: string,
-                Item: string, 
-                ItemUID: string,
-                Role: string,
-            }) => {
-                console.log(member)
-                const memberData : Item = {} as Item
-                memberData.ReportId = addResult.id
-                memberData.Item = member.Item
-                memberData.ItemUID = member.ItemUID
-                memberData.ProofId = member.ProofId + addResult.id
-                memberData.roleId = parseInt(member.Role)
-                memberData.delete = false
-                
-                const addMember = await addReportMember(memberData)
-                console.log('addMember...',addMember)
-            });
+        console.log('Update total:', reportTotal)
 
-            proofTypeInput.forEach(async (proofType: {
-                ProofType: string, ProofStatus: number, 
-                Proof: [{  
-                    proof: number,
-                    StartDate: Dayjs,
-                    EndDate: Dayjs,
-                    Item: {ProofId: string, Item: string, Role: number},
-                    total: number
-                }]
-            , total: number}) => {
-                const proofTypeData : Proof = {} as Proof
-                proofTypeData.total = proofType.total
-                proofTypeData.ReportId = addResult.id
-                proofTypeData.StatusId = proofType.ProofStatus
-                proofTypeData.TypeId = parseInt(proofType.ProofType)
+        const updateResult = await updateReport(report, data.id, user)
+        membersInput.forEach(async (member: {
+            id: number,
+            ProofId: string,
+            Item: string, 
+            Role: string,
+            ItemUID: string,
+            delete: boolean,
+        }) => {
+            const memberData : Item = {} as Item
+            memberData.ReportId = data.id
+            memberData.Item = member.Item
+            memberData.ItemUID = member.ItemUID
+            memberData.roleId = parseInt(member.Role)
+            memberData.delete = false
+            if(member.id === 0){
+                memberData.ProofId = member.ProofId + data.id
+                await addReportMember(memberData)
+            } else if(!member.delete) {
+                memberData.ProofId = member.ProofId
+                await updateMember(memberData,member.id,user)
+            } else {
+                await deleteMember(member.id,user)
+            }
+        
+        });
 
+        proofTypeInput.forEach(async (proofType: any
+        //     {
+        //     ProofType: string, ProofStatus: number, 
+        //     Proof: [{  
+        //         proof: number,
+        //         StartDate: Dayjs,
+        //         EndDate: Dayjs,
+        //         Item: {ProofId: string, Item: string, Role: number},
+        //         total: number
+        //     }]
+        // , total: number}
+        ) => {
+            const proofTypeData : Proof = {} as Proof
+            proofTypeData.total = proofType.total
+            proofTypeData.ReportId = data.id
+            proofTypeData.StatusId = proofType.ProofStatus
+            proofTypeData.TypeId = parseInt(proofType.ProofType)
+            proofTypeData.Delete = false
+            if(proofType.id === 0){
                 const addProofTypeResp = await addReportProof(proofTypeData)
                 console.log('addProof...', addProofTypeResp)
                 if(addProofTypeResp.id) {
@@ -253,13 +292,14 @@ const AddReport = () => {
                         proof: number,
                         StartDate: Dayjs,
                         EndDate: Dayjs,
-                        Item: {ProofId: string, Item: string, Role: number},
+                        Item: { id: number,ProofId: string, Item: string, Role: number},
                         total: number
                     }) => {
                         const itemProofData : ItemProof = {} as ItemProof
                         itemProofData.total = itemProof.total
                         itemProofData.proof = itemProof.proof
-                        itemProofData.ItemId = parseInt(itemProof.Item.ProofId + addResult.id)
+                        itemProofData.ItemId =  membersInput.filter((member: { id: number, ProofId: string}) => member.ProofId === itemProof.Item.ProofId)[0].id === 0 ? 
+                            parseInt(itemProof.Item.ProofId + data.id) : parseInt(itemProof.Item.ProofId)
                         itemProofData.ProofId = addProofTypeResp.id
                         itemProofData.StartDate = itemProof.StartDate.format('MM/DD/YYYY')
                         itemProofData.EndDate = itemProof.EndDate.format('MM/DD/YYYY')
@@ -268,34 +308,70 @@ const AddReport = () => {
                         console.log('addItemProof...', addItemProofResp)
                     })
                 }
-            })
-            
-            setAlert(true)
-            setAlertMessage({message: 'Application was succesful', status: 'success'})
-        }
-        console.log('save...',addResult)
+            } else if(!proofType.Delete) {
+                await updateReportProof(proofTypeData, proofType.id, user)
+                proofType.Proof.forEach(async (itemProof: {  
+                    id: number,
+                    proof: number,
+                    StartDate: Dayjs,
+                    EndDate: Dayjs,
+                    Item: {id: number,ProofId: string, Item: string, Role: number},
+                    total: number
+                    delete: boolean
+                }) => {
+                    const itemProofData : ItemProof = {} as ItemProof
+                    itemProofData.total = itemProof.total
+                    itemProofData.proof = itemProof.proof
+                    itemProofData.ItemId =  membersInput.filter((member: { id: number, ProofId: string}) => member.ProofId === itemProof.Item.ProofId)[0].id === 0 ? 
+                        parseInt(itemProof.Item.ProofId + data.id) : parseInt(itemProof.Item.ProofId)
+                    itemProofData.ProofId = proofType.id
+                    itemProofData.StartDate = itemProof.StartDate.format('MM/DD/YYYY')
+                    itemProofData.EndDate = itemProof.EndDate.format('MM/DD/YYYY')
+                    itemProofData.delete = false
+
+                    if(itemProof.id === 0) {
+                        await addReportItemProof(itemProofData)
+                    } else if (!itemProof.delete) {
+                        await updateReportItemProof(itemProofData,itemProof.id,user)
+                    }
+                    else {
+                        await deleteItemProof(itemProof.id,user)
+                    }
+                })
+
+            } else {
+                await deleteProof(proofType.id, user)
+                proofType.Proof.forEach(async (itemProof: { id: number }) => {
+                    await deleteItemProof(itemProof.id,user)
+                })
+            }
+        
+        })
+        
+        setAlert(true)
+        setAlertMessage({message: 'Application was succesfully updated', status: 'success'})
+
+        console.log('update...',updateResult)
     }
 
     return (
         <>
-        <IncomeAppBar />
         {alert &&   
             <Snackbar
                 anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
                 open={alert}
                 autoHideDuration={4000}
-                onClose={() => router.push('/')}
+                onClose={() => router.reload()}
             >
-                <Alert onClose={() => router.push('/')} severity={alertMessage.status} sx={{ width: '100%' }}>
+                <Alert onClose={() => router.reload()} severity={alertMessage.status} sx={{ width: '100%' }}>
                     {alertMessage.message}
                 </Alert>
             </Snackbar>
         }
-        <Grid sx={{ margin:2 }}>
         <Card 
-            sx={{       
+             sx={{       
                 boxShadow: 3,
-                border: 2,
+                border: 1,
                 borderColor: '#80cbc4',
             }}
         >
@@ -303,11 +379,13 @@ const AddReport = () => {
                 avatar={<Avatar sx={{ bgcolor: reportResult === 'Eligible' ? green[500] : red[500] }}>{reportResult.split(' ')[0][0]}</Avatar>}
                 title="General Information"
                 subheader={`Report Period: ${eligibilityStartDate?.format('MM/DD/YYYY')}  - ${eligibilityEndDate?.format('MM/DD/YYYY')}`}
-                action={<Button variant="contained" color="success" onClick={submit}>Save</Button>}
-                // <ButtonGroup >
-                //     {/* <Button variant="contained" color="error" onClick={() => console.log('cancel')}>Cancel</Button> */}
-                //     <Button variant="contained" color="success" onClick={submit}>Save</Button>
-                // </ButtonGroup>
+                action={
+                // <Button variant="contained" color="success" onClick={submit}>Save</Button>
+                <ButtonGroup>
+                    <Button sx={{ marginRight: 1, backgroundColor: "#b32123", color: "#f6e6e9" }} variant="contained" onClick={() => setEdit()}>Cancel</Button>
+                    <Button sx={{ backgroundColor: "#27ab4d", color: "#e5f5e9" }} variant="contained" onClick={submit}>Update</Button>
+                </ButtonGroup>
+                }
             />
             <CardContent>
                 <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
@@ -326,7 +404,7 @@ const AddReport = () => {
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                             label="Report Date"
-                            
+                            disabled
                             value={reportDate}
                             onChange={(newValue) => handleReportDateChange(newValue)}
                             renderInput={(params) => <TextField {...params} />}
@@ -372,10 +450,10 @@ const AddReport = () => {
                     id="panel1a-header"
                     >
                         <Typography sx={{ width: '85%', flexShrink: 0 }}>Add Members</Typography>
-                        <Typography sx={{ color: 'text.secondary' }}>Total: {membersInput.length}</Typography>
+                        <Typography sx={{ color: 'text.secondary' }}>Total: {data.Item.length}</Typography>
                     </AccordionSummary>
                     <AccordionDetails>
-                        {membersInput.map((input: {Item: string, Role: string}, index: number) => (
+                        {membersInput.map((input: {ProofId: string,Item: string, Role: string, delete: boolean, ItemUID: string}, index: number) => (
                             <MemberForm 
                                 key={index}
                                 input={input}
@@ -383,6 +461,7 @@ const AddReport = () => {
                                 setMembersInput={setMembersInput}
                                 membersInput={membersInput}
                                 itemRolesOptions={itemRolesOptions}
+                                edit={true}
                             />
                       
                         ))}
@@ -401,11 +480,13 @@ const AddReport = () => {
                         <Typography sx={{ color: 'text.secondary' }}>Total: {reportTotal.toLocaleString('en-US', { style: 'currency', currency: 'USD' })} Percentage: {reportPercentage.toFixed(2)}%</Typography>
                     </AccordionSummary>
                     <AccordionDetails>
-                        {proofTypeInput.map((input: 
-                            {ProofType: string, 
-                            ProofStatus: string, 
-                            Proof: [{ proof: number, StartDate: Dayjs, EndDate: Dayjs, Item: {Item: string, Role: string}, total: number}],
-                            total: number}
+                        {proofTypeInput.map((input: any
+                            // {
+                            //     ProofType: string, 
+                            //     ProofStatus: number, 
+                            //     Proof: [{ proof: number, StartDate: Dayjs, EndDate: Dayjs, Item: {Item: string, Role: string}, total: number}],
+                            //     total: number
+                            // }
                         ,index: number) => (
                         <Stack direction="column" spacing={2} sx={{ mb: 2 }} key={index}>
                             <FormControl fullWidth>
@@ -419,22 +500,23 @@ const AddReport = () => {
                                 onChange={(event) => handleProofTypeChange(index, event)}
                                 >
                                     {proofTypesOptions.map((types: ProofType) => (
-                                        <MenuItem key={types.id} value={types.id} disabled={ProofTypeDisabled(types.id)}>{types.ProofType}</MenuItem>
+                                        <MenuItem key={types.id} value={types.id} disabled={ProofTypeDisabled(types.id.toString())}>{types.ProofType}</MenuItem>
                                     ))}
                                 </Select>
                             </FormControl>
                             {input.ProofType != '' &&
-                                <ProofCardForm 
+                                <ProofCardForm
                                     index={index}
                                     input={input}
                                     proofTypeInput={proofTypeInput} 
                                     setProofTypeInput={setProofTypeInput} 
-                                    proofType={proofTypesOptions.find((type:{ id: number}) => type.id === parseInt(input.ProofType)).ProofType}
+                                    proofType={proofTypesOptions.find((type:{ id: number}) => type.id === parseInt(input.ProofType))?.ProofType}
                                     eligibilityStartDate={eligibilityStartDate}
                                     eligibilityEndDate={eligibilityEndDate}
                                     membersInput={membersInput}
                                     proofStatusOptions={proofStatusOptions}
                                     setReportTotal={setReportTotal}
+                                    edit={true}
                                 />
                             
                             }
@@ -447,10 +529,8 @@ const AddReport = () => {
                 </Accordion>
             </CardContent>
         </Card>
-        </Grid>
-        <Image  src="/../public/Eligibee-bee.png"  alt="eligibee" height={300} width={300} style={{ right: 0, position: 'fixed', bottom: 0, }} />
         </>
     )
 }
 
-export default AddReport
+export default UpdateReport

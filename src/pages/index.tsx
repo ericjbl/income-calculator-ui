@@ -1,245 +1,39 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from '@next/font/google'
-import styles from '@/styles/Home.module.css'
-import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/router'
-import { getReports } from 'service/IncomeServices'
-import SideMenu from 'components/SideMenu'
-import { 
-  Paper, 
-  TableContainer, 
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  Chip,
-  Box,
-  TableFooter,
-  TablePagination,
-} from '@mui/material'
-import { DataGrid, GridColDef, GridValueFormatterParams, GridRenderCellParams, GridSelectionModel} from '@mui/x-data-grid'
-import { Report, ReportStatus } from 'utils/types'
-import WarningIcon from '@mui/icons-material/Warning'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import IncomeAppBar from 'components/IncomeAppBar'
+import { HiOutlineDocumentPlus, HiOutlineDocumentMagnifyingGlass } from "react-icons/hi2";
+import { Container, Stack, Box } from "@mui/material";
+import IncomeAppBar from "components/IncomeAppBar";
+import React from "react";
+import HomeButton from "components/HomeButton";
+import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
+import { useAuth } from "providers/AuthProvider";
+import Image from "next/image";
 
-const inter = Inter({ subsets: ['latin'] })
-
-export default function Home() {
-  const [reports,setReports] = useState([] as any)
-  // const [selectedRow, setSelectedRow] = useState({} as Report)
-  // const [page, setPage] = useState(0)
-  // const [rowsPerPage, setRowsPerPage] = useState(10)
-  const [pageSize, setPageSize] = useState(10);
-  const [selectionModel, setSelectionModel] = useState<GridSelectionModel>([])
-  const router = useRouter()
-
-  const columns: GridColDef[] = [
-    { field: 'name', headerName: 'Name', flex: 1,},
-    { field: 'ReportDate', headerName: 'Report Date', flex: 1,
-    valueFormatter: (params: GridValueFormatterParams<Date>) => {
-      if (params.value == null) {
-        return '';
-      }
-
-      const valueFormatted = new Date(params.value).toLocaleDateString("en-US");
-      return `${valueFormatted}`;
-    },
-    },
-    { field: 'EligibilityStartDate', headerName: 'Eligible Start Date', flex: 1,
-    valueFormatter: (params: GridValueFormatterParams<Date>) => {
-      if (params.value == null) {
-        return '';
-      }
-
-      const valueFormatted = new Date(params.value).toLocaleDateString("en-US");
-      return `${valueFormatted}`;
-    },
-    },
-    { field: 'EligibilityEndDate', headerName: 'Eligible End Date', flex: 1,
-    valueFormatter: (params: GridValueFormatterParams<Date>) => {
-      if (params.value == null) {
-        return '';
-      }
-
-      const valueFormatted = new Date(params.value).toLocaleDateString("en-US");
-      return `${valueFormatted}`;
-    },
-    },
-    { field: 'total', headerName: 'Total', flex: 1,
-    valueFormatter: (params: GridValueFormatterParams<number>) => {
-      if (params.value == null) {
-        return '';
-      }
-
-      const valueFormatted = Number(params.value).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-      return `${valueFormatted}`;
-    },
-    },
-    { field: 'percentage', headerName: 'Percentage', flex: 1,
-    valueFormatter: (params: GridValueFormatterParams<number>) => {
-      if (params.value == null) {
-        return '';
-      }
-
-      const valueFormatted = Number(params.value * 100).toFixed(2);
-      return `${valueFormatted} %`;
-    },
-    },
-    { field: 'result', headerName: 'Result', flex: 1,
-    renderCell: (params: GridRenderCellParams<String>) => (
-      <Chip label={params.value} color={params.value === 'Ineligible' ? "error" : "success"} icon={params.value === 'Ineligible' ? <WarningIcon /> : <CheckCircleIcon/>} />
-    )                
-    },
-    { field: 'Status', headerName: 'Status', flex: 1,
-    valueFormatter: (params: GridValueFormatterParams<ReportStatus>) => {
-      if (params.value?.ReportStatus == null) {
-        return '';
-      }
-
-      const valueFormatted = params.value?.ReportStatus;
-      return `${valueFormatted}`;
-    },
-
-    renderCell: (params: GridRenderCellParams<ReportStatus>) => (
-      <Chip label={params.value?.ReportStatus} color={params.value?.ReportStatus === 'Incomplete' ? "error" : "success"} icon={params.value?.ReportStatus === 'Incomplete' ? <WarningIcon /> : <CheckCircleIcon/>} />
-    ) 
-    },
-  ];
-
-  useEffect(()=>{
-    getReportsResp()
-  },[])
-
-  const getReportsResp = useCallback(async () => {
-    const resp = await getReports()
-    setReports(resp)
-  },[])
-
-  // const handleChangePage = (event: unknown, newPage: number) => {
-  //   setPage(newPage);
-  // };
-
-  // const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-  //   setRowsPerPage(parseInt(event.target.value, 10));
-  //   setPage(0);
-  // };
-
-  return (
-    <>
-      <Head>
-        <title>Income Calculation App</title>
-        <meta name="description" content="Generated by create next app" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <IncomeAppBar />
-      {/* <main className={styles.main}> */}
-       
-        {reports && 
-        <Box sx={{ height: 600, width: 1600, m: 3 }}>
-          <DataGrid
-          rows={reports}
-          columns={columns}
-          pageSize={pageSize}
-          pagination
-          onPageSizeChange={(newPageSize) => setPageSize(newPageSize)}
-          rowsPerPageOptions={[10,20,30]}
-          onSelectionModelChange={(newSelectionModel) => {
-            setSelectionModel(newSelectionModel);
-            router.push('/reports/'+newSelectionModel[0])
-            console.log(newSelectionModel)
-          }}
-        />
+const Home = () => {
+    const { user } = useAuth()
+    return(
+        <>
+        <IncomeAppBar />
+        <Box  
+            // direction="row"
+            // spacing={1}
+            sx={{   
+                margin: 2,  
+                display: 'flex'  
+                // boxShadow: 3,
+                // border: 2,
+                // borderColor: '#80cbc4',
+            }}
+        >
+            <Stack direction="row" spacing={3} p={3} >
+                <HomeButton title="New Application" icon={ <HiOutlineDocumentPlus style={{ fontSize: '64px' }} />} route="/reports/add" />
+                <HomeButton title="My Applications" icon={ <HiOutlineDocumentMagnifyingGlass style={{ fontSize: '64px' }} />} route="/reports/" />
+                {user.roles.role === 'Admin' && <HomeButton title="Admin Portal" icon={ <SupervisorAccountIcon style={{ fontSize: '64px' }} />} route="/admin" />}
+            </Stack>
         </Box>
-        }
-{/*     
-      <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 500 }} aria-label="custom pagination table">
-          <TableHead>
-              <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Report Date</TableCell>
-                  <TableCell>Eligible Start Date</TableCell>
-                  <TableCell>Eligible End Date</TableCell>
-                  <TableCell>Total</TableCell>
-                  <TableCell>Percentage</TableCell>
-                  <TableCell>Result</TableCell>
-                  <TableCell>Status</TableCell>
-              </TableRow>
-          </TableHead>
-          <TableBody>
-            {
-            (rowsPerPage > 0
-              ? reports?.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              : reports
-            )
-            // reports?
-            .map((row : Report) => {
-              const isItemSelected =  selectedRow.id === row.id;
-              return(
-                <TableRow 
-                  hover
-                  onClick={() => setSelectedRow(row)}
-                  tabIndex={-1}
-                  key={row.id}
-                  selected={isItemSelected}
-                >
-                  <TableCell component="th" scope="row">
-                    {row.name}
-                  </TableCell>
-                  <TableCell style={{ width: 160 }} >
-                    {new Date(row.ReportDate).toLocaleDateString("en-US")}
-                  </TableCell>
-                  <TableCell style={{ width: 160 }} >
-                    {new Date(row.EligibilityStartDate).toLocaleDateString("en-US")}
-                  </TableCell>
-                  <TableCell style={{ width: 160 }} >
-                    {new Date(row.EligibilityEndDate).toLocaleDateString("en-US")}
-                  </TableCell>
-                  <TableCell style={{ width: 160 }} >
-                    {row.total?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
-                  </TableCell>
-                  <TableCell style={{ width: 160 }} >
-                    {row.percentage?.toFixed(2)}%
-                  </TableCell>
-                  <TableCell style={{ width: 160 }} >
-                    <Chip label={row.result} color={row.result === 'Ineligible' ? "error" : "success"} icon={row.result === 'Ineligible' ? <WarningIcon /> : <CheckCircleIcon/>} />
-                  </TableCell>
-                  <TableCell style={{ width: 160 }} >
-                    <Chip label={row.Status?.ReportStatus} color={row.Status?.ReportStatus === 'Incomplete' ? "error" : "success"} icon={row.Status?.ReportStatus === 'Incomplete' ? <WarningIcon /> : <CheckCircleIcon />} />
-                  </TableCell>
-                </TableRow>
-              )
-              
-            })}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TablePagination
-                rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
-                colSpan={3}
-                count={reports?.length}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                SelectProps={{
-                  inputProps: {
-                    'aria-label': 'rows per page',
-                  },
-                  native: true,
-                }}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                // ActionsComponent={TablePaginationActions}
-              />
-            </TableRow>
-          </TableFooter>
-        </Table>
-      </TableContainer> */}
-       
-      {/* </main> */}
-    </>
-  )
+        <Image  src="/../public/Eligibee-bee.png"  alt="eligibee" height={300} width={300} style={{ right: 0, position: 'fixed', bottom: 0, }} />
+
+    
+        </>
+    )
 }
+
+export default  Home;

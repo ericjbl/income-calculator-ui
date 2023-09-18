@@ -15,6 +15,8 @@ import {
     Chip,
     IconButton,
     InputAdornment,
+    Alert,
+    Collapse,
 } from "@mui/material"
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
@@ -23,8 +25,11 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import dayjs,{ Dayjs } from 'dayjs'
 import { ProofStatus } from "utils/types"
 import DeleteIcon from '@mui/icons-material/Delete'
-import { useState } from "react"
+import React, { useState } from "react"
 import { calculateTotal, getChipColor, getDaysToInclude, generateItemId } from "utils/dataUtil"
+import { HiOutlineXCircle } from "react-icons/hi2";
+import CloseIcon from '@mui/icons-material/Close';
+import { useAuth } from "providers/AuthProvider"
 
 const ProofCardForm = ({
         index, 
@@ -36,8 +41,10 @@ const ProofCardForm = ({
         eligibilityEndDate,
         membersInput,
         proofStatusOptions,
-        setReportTotal
+        setReportTotal,
+        edit = false,
     }:{
+        edit?: boolean,
         index: number,
         input: any,
         proofTypeInput: any, 
@@ -50,6 +57,8 @@ const ProofCardForm = ({
         setReportTotal: (total: number) => void
     }
 ) => {
+    const { user } = useAuth()
+    const [alert, setAlert] = useState(false)
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const proofTypeMenuOpen = Boolean(anchorEl);
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -61,44 +70,117 @@ const ProofCardForm = ({
 
     const removeProofType = (index: number) => {
         const data = [...proofTypeInput]
-        data.splice(index,1)
+
+   
+        if(edit && input.id !== 0) {
+            data[index].Delete = true
+            // data.splice(index,1)
      
-        const finalTotal = data?.reduce((accumulator: number, object: {total: string}) => {
-            return accumulator + parseFloat(object.total)
-        },0)
-        
-        setReportTotal(finalTotal)
-        setProofTypeInput(data) 
+            const finalTotal = data?.filter((proof: any) => proof.Delete === false).reduce((accumulator: number, object: {total: string}) => {
+                return accumulator + parseFloat(object.total)
+            },0)
+            setReportTotal(finalTotal)
+            setProofTypeInput(data) 
+        } else {
+            data.splice(index,1)
+     
+            const finalTotal = data?.reduce((accumulator: number, object: {total: string}) => {
+                return accumulator + parseFloat(object.total)
+            },0)
+            setReportTotal(finalTotal)
+            setProofTypeInput(data) 
+
+        }
     }
 
     const addProof = (index: number) => {
         let data = [...proofTypeInput]
         data[index].Proof.push({  
+            id: 0,
             proof: 0,
             StartDate: null,
             EndDate: null,
             Item: {ProofId: '', Item: '', Role: ''},
-            total: 0
+            total: 0,
+            delete: false
         })
   
         setProofTypeInput([...proofTypeInput]) 
     }
 
     const removeProof = (index: number, indexProof: number) => {
-        let data = [...proofTypeInput]        
-        data[index].Proof.splice(indexProof,1)
-        const proofTotal = data[index].Proof?.reduce((accumulator: number, object: {total: string}) => {
+        let data = [...proofTypeInput]  
+        if(edit &&  data[index].Proof[indexProof].id !== 0) {
+            data[index].Proof[indexProof].delete = true
+            const proofTotal = data[index].Proof?.filter((itemProof: any) => itemProof.delete === false).reduce((accumulator: number, object: {total: string}) => {
+                return accumulator + parseFloat(object.total)
+            },0)
+            
+            data[index].total = proofTotal
+
+            data[index].Proof?.filter((itemProof: any) => itemProof.delete === false).length === 0 ? data[index].Delete = true : null
+    
+            const finalTotal = data.length > 1 ? data?.reduce((accumulator: number, object: {total: string}) => {
+                return accumulator + parseFloat(object.total)
+            },0) : proofTotal
+
+            setReportTotal(finalTotal)
+            setProofTypeInput(data) 
+
+        } else {
+            data[index].Proof.splice(indexProof,1)
+            const proofTotal = data[index].Proof?.reduce((accumulator: number, object: {total: string}) => {
+                return accumulator + parseFloat(object.total)
+            },0)
+        
+            data[index].total = proofTotal
+    
+            const finalTotal = data.length > 1 ? data?.reduce((accumulator: number, object: {total: string}) => {
+                return accumulator + parseFloat(object.total)
+            },0) : proofTotal
+    
+            setReportTotal(finalTotal)
+            setProofTypeInput(data) 
+
+        }
+  
+    }
+
+    const cancelItemProofRemove = (index: number, indexProof: number) => {
+        let data = [...proofTypeInput]  
+        data[index].Proof[indexProof].delete = false
+        console.log(data[index].Proof[indexProof])
+        const proofTotal = data[index].Proof?.filter((itemProof: any) => itemProof.delete === false).reduce((accumulator: number, object: {total: string}) => {
             return accumulator + parseFloat(object.total)
         },0)
-    
+        
         data[index].total = proofTotal
+
+        data[index].Proof?.filter((itemProof: any) => itemProof.delete === false).length > 0 ? data[index].Delete = false : null
 
         const finalTotal = data.length > 1 ? data?.reduce((accumulator: number, object: {total: string}) => {
             return accumulator + parseFloat(object.total)
         },0) : proofTotal
 
         setReportTotal(finalTotal)
-        setProofTypeInput(data) 
+        setProofTypeInput(data)
+
+    }
+
+    const cancelProofRemove = (index: number) => {
+        let data = [...proofTypeInput]  
+        if(data[index].Proof?.filter((itemProof: any) => itemProof.delete === false).length > 0) {
+            data[index].Delete = false     
+            const finalTotal = data?.filter((proof: any) => proof.Delete === false).reduce((accumulator: number, object: {total: string}) => {
+                return accumulator + parseFloat(object.total)
+            },0)
+            setReportTotal(finalTotal)
+            setProofTypeInput(data) 
+
+        } else {
+            setAlert(true)
+        }
+
     }
 
     const handleProofStatushange = (index: number, event: SelectChangeEvent) => {
@@ -152,11 +234,32 @@ const ProofCardForm = ({
 
     return (
 
-        <Card key={index}>
+        <Card>
+            <Collapse in={alert}>
+                <Alert
+                severity="error"
+                action={
+                    <IconButton
+                    aria-label="close"
+                    color="inherit"
+                    size="small"
+                    onClick={() => {
+                        setAlert(false);
+                    }}
+                    >
+                    <CloseIcon fontSize="inherit" />
+                    </IconButton>
+                }
+                sx={{ mb: 2 }}
+                >
+                Need to have at least one proof to be able to cancel the removal
+                </Alert>
+            </Collapse>
             <CardHeader 
                 title={proofType}
                 action={
                     <div>
+                       {input.Delete && <Chip sx={{ backgroundColor: "#b32123", color: "#f6e6e9" }} label="REMOVED" icon={<HiOutlineXCircle color={"#f6e6e9"} fontSize={"32px"} onClick={() => cancelProofRemove(index)} />}></Chip>}
                     <IconButton
                         aria-controls={proofTypeMenuOpen ? 'basic-menu' : undefined}
                         aria-haspopup="true"
@@ -194,8 +297,8 @@ const ProofCardForm = ({
                             renderValue={(selected) => (
                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                     <Chip key={selected} 
-                                        label={proofStatusOptions.find((status: ProofStatus) => status.id === parseInt(selected)).status} 
-                                        sx={{bgcolor: getChipColor(proofStatusOptions.find((status: ProofStatus) => status.id === parseInt(selected)).status), color: 'white'}}
+                                        label={proofStatusOptions.find((status: ProofStatus) => status.id === parseInt(selected))?.status} 
+                                        sx={{bgcolor: getChipColor(proofStatusOptions.find((status: ProofStatus) => status.id === parseInt(selected))?.status), color: 'white'}}
                                     />
                                 </Box>
                             )}
@@ -211,7 +314,7 @@ const ProofCardForm = ({
                         {input.total?.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
                     </Typography>
                 </Stack>
-                {input.Proof?.map((proof: { proof: number, StartDate: Dayjs, EndDate: Dayjs, Item: {ProofId: string, Item: string, Role: string}, total: number}, indexProof: number) => (
+                {input.Proof?.map((proof: { proof: number, StartDate: Dayjs, EndDate: Dayjs, Item: {ProofId: string, Item: string, Role: string}, total: number, delete: boolean}, indexProof: number) => (
                     <Stack direction="row" spacing={2} sx={{ mb: 2 }} key={indexProof}>
                         <Box sx={{ minWidth: 220 }}>
                             <FormControl fullWidth>
@@ -223,7 +326,7 @@ const ProofCardForm = ({
                                 label="Role"
                                 onChange={(event) => handleItemProofChange(index, indexProof, event)}
                                 >
-                                    {membersInput.map((member: {ProofId: '', Item: '', Role: ''}, index: number) => (
+                                    {membersInput.map((member: {ProofId: string, Item: string, Role: string}, index: number) => (
                                         <MenuItem key={index} value={member.ProofId}>{member.Item}</MenuItem>
                                     ))}
                                 </Select>
@@ -256,9 +359,10 @@ const ProofCardForm = ({
                         <Typography sx={{ pt: 2 }}>
                             {proof.total.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
                         </Typography>
-                        <IconButton disabled={input.Proof.length === 1} onClick={() => removeProof(index, indexProof)}>
+                        {proof.delete ? <Chip sx={{ backgroundColor: "#b32123", color: "#f6e6e9" }} label="REMOVED" icon={<HiOutlineXCircle color={"#f6e6e9"} fontSize={"32px"} onClick={() => cancelItemProofRemove(index,indexProof)}/>}></Chip> :
+                        <IconButton disabled={edit ? !edit : input.Proof.length === 1} onClick={() => removeProof(index, indexProof)}>
                             <DeleteIcon fontSize="medium" />
-                        </IconButton>
+                        </IconButton>}
                     </Stack>
                 ))}
         
